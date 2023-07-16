@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+# 참고: https://kminito.tistory.com/79
 import os
 import time
+import ctypes
 from random import randint
 from datetime import datetime
 from selenium import webdriver
@@ -14,6 +16,7 @@ from srt_reservation.exceptions import InvalidStationNameError, InvalidDateError
 from srt_reservation.validation import station_list
 
 chromedriver_path = r'C:\workspace\chromedriver.exe'
+# chromedriver_path = r'C:\Users\웅제은경\.wdm\drivers\chromedriver\win32\114.0.5735.90\chromedriver.exe'
 
 class SRT:
     def __init__(self, dpt_stn, arr_stn, dpt_dt, dpt_tm, num_trains_to_check=2, want_reserve=False):
@@ -60,9 +63,15 @@ class SRT:
 
     def run_driver(self):
         try:
-            self.driver = webdriver.Chrome(executable_path=chromedriver_path)
+            # 크롬 웹 드라이버 옵션 설정
+            chrome_options = webdriver.ChromeOptions()
+            # 웹 브라우저가 실행되지 않고 백그라운드에서 실행하도록 설정
+            chrome_options.add_argument("--headless")
+
+            # 크롬 웹 드라이버 실행
+            self.driver = webdriver.Chrome(options=chrome_options)
         except WebDriverException:
-            self.driver = webdriver.Chrome(ChromeDriverManager().install())
+            print("********************************** Error Occured!!!!!!!!!!!!!")
 
     def login(self):
         self.driver.get('https://etk.srail.co.kr/cmc/01/selectLoginForm.do')
@@ -134,6 +143,7 @@ class SRT:
             # 예약이 성공하면
             if self.driver.find_elements(By.ID, 'isFalseGotoMain'):
                 self.is_booked = True
+                self.play_notification_sound()
                 print("예약 성공")
                 return self.driver
             else:
@@ -181,17 +191,53 @@ class SRT:
                 self.refresh_result()
 
     def run(self, login_id, login_psw):
+        self.play_notification_sound()
         self.run_driver()
+        print("************************************ run_driver() 완료 ")
         self.set_log_info(login_id, login_psw)
+        print("************************************ set_log_info() 완료 ")
         self.login()
+        print("************************************ login() 완료 ")
         self.go_search()
+        print("************************************ go_search() 완료 ")
         self.check_result()
+        print("************************************ check_result() 완료 ")
+        print("************************************ 프로그램 종료합니다. ")
 
-#
+    def play_notification_sound(self):
+        # 알림 소리 재생
+        duration = 1000  # 소리 재생 시간 (밀리초)
+        freq = 440  # 주파수 (440Hz는 A4 음)
+        ctypes.windll.kernel32.Beep(freq, duration)
+
+    def test(self):
+        # 크롬 옵션 설정 (headless 옵션은 브라우저가 보이지 않도록 실행하는 옵션입니다)
+        # 크롬 웹 드라이버 옵션 설정
+        chrome_options = webdriver.ChromeOptions()
+        # 웹 브라우저가 실행되지 않고 백그라운드에서 실행하도록 설정
+        chrome_options.add_argument("--headless")
+
+        # 크롬 웹 드라이버 실행
+        self.driver = webdriver.Chrome(options=chrome_options)
+
+        # URL로 접속
+        url = "https://etk.srail.co.kr/cmc/01/selectLoginForm.do"
+        self.driver.get(url)
+
+        # 페이지 타이틀 출력 (선택사항)
+        print(self.driver.title)
+
+        # 원하는 작업 수행 (페이지 조작, 데이터 스크래핑 등)
+
+        # 작업이 끝나면 브라우저 종료
+        self.driver.quit()
+
+
 # if __name__ == "__main__":
-#     srt_id = os.environ.get('srt_id')
-#     srt_psw = os.environ.get('srt_psw')
-#
-#     srt = SRT("동탄", "동대구", "20220917", "08")
+#     # 1899854657 --psw 'dndwp92!@'
+#     srt_id = '1899854657'
+#     srt_psw = 'dndwp92!@'
+
+#     srt = SRT("동대구", "동탄", "20230716", "20")
 #     srt.run(srt_id, srt_psw)
 
